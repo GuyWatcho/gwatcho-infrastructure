@@ -1,0 +1,83 @@
+ 
+  
+docker exec -i gwatcho-mysql-product mysql -u product_user -p product_password < "D:\Projects\Java\IntelliJ_WS\MicroServicesApp\gwatcho-infrastructure\docker\mysql\product\products.sql"
+
+
+------- delivery -----------------------------
+
+docker exec -it gwatcho-mysql-delivery mysql -u delivery_user -p delivery_db -e "SELECT * FROM deliveries WHERE order_id = 2;"
+
+docker exec -it gwatcho-mysql-delivery mysql -u delivery_user -pdelivery_password delivery_db -e "SELECT order_id, COUNT(*) AS delivery_count FROM deliveries WHERE order_id = 3 GROUP BY order_id;"
+
+docker exec -it gwatcho-mysql-delivery mysql -u delivery_user -pdelivery_password delivery_db -e "SELECT id, order_id, payment_id, amount, status, transaction_id, delivered_at FROM deliveries WHERE order_id = 3;"
+
+
+-- ------------------order db---------------------------
+
+docker exec -it gwatcho-mysql-order mysql -u order_user -porder_password order_db -e "SELECT id, status, total_amount, currency FROM orders WHERE id = 2;"
+
+docker exec -it gwatcho-mysql-order mysql -u order_user -porder_password order_db -e "SELECT id, status, total_amount, currency FROM orders;"
+
+docker exec -it gwatcho-mysql-order mysql -u order_user -porder_password order_db -e "SELECT count(*) FROM orders;"
+
+
+
+---------payment db--------------------------------
+
+
+
+docker exec -it gwatcho-mysql-payment mysql -u payment_user -ppayment_password payment_db -e "SELECT * FROM payments WHERE order_id = 2;"
+
+
+
+
+
+----------------------------------------------------------------------
+
+
+
+private readonly apiUrl = '/api/product-service/api/products';
+
+
+For users:
+private readonly apiUrl = '/api/user-service/api/users';
+
+
+For orders:
+private readonly apiUrl = '/api/order-service/api/orders';
+
+
+ 
+server {
+    listen 80;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # ==========================================
+    # API Gateway - All Microservices
+    # ==========================================
+    location /api/ {
+        proxy_pass http://api-gateway:8085/api-gateway/;
+
+        proxy_http_version 1.1;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Forward Keycloak JWT
+        proxy_set_header Authorization $http_authorization;
+    }
+
+    # ==========================================
+    # Angular Application
+    # ==========================================
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+ 
+ 

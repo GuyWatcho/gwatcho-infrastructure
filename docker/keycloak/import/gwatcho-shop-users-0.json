@@ -1,0 +1,50 @@
+{
+  "realm" : "gwatcho-shop",
+  "users" : [ {
+    "id" : "6c917f4d-31b8-4ef6-86c9-2dbd9a052052",
+    "username" : "customer1",
+    "firstName" : "Customer",
+    "lastName" : "One",
+    "email" : "customer1@gwatcho-shop.local",
+    "emailVerified" : false,
+    "enabled" : true,
+    "createdTimestamp" : 1790273615730,
+    "totp" : false,
+    "credentials" : [ {
+      "id" : "bfd73267-6c6d-49b1-b01a-ca574bac1028",
+      "type" : "password",
+      "userLabel" : "My password",
+      "createdDate" : 1790281181669,
+      "secretData" : "{\"value\":\"zZTm7DL2/w0qA6YVKxylRh/mp+jNVs9SYKlon9kxqhE=\",\"salt\":\"zf7IOKJA+DY4OU3/yJcTKQ==\",\"additionalParameters\":{}}",
+      "credentialData" : "{\"hashIterations\":5,\"algorithm\":\"argon2\",\"additionalParameters\":{\"hashLength\":[\"32\"],\"memory\":[\"7168\"],\"type\":[\"id\"],\"version\":[\"1.3\"],\"parallelism\":[\"1\"]}}"
+    } ],
+    "disableableCredentialTypes" : [ ],
+    "requiredActions" : [ ],
+    "realmRoles" : [ "CUSTOMER", "default-roles-gwatcho-shop" ],
+    "notBefore" : 0,
+    "groups" : [ ]
+  }, {
+    "id" : "87038fd0-a92c-4552-992e-0787813cbaf5",
+    "username" : "e2e-test-user",
+    "firstName" : "E2E User",
+    "lastName" : "Tester",
+    "email" : "e2e.user@gmail.com",
+    "emailVerified" : false,
+    "enabled" : true,
+    "createdTimestamp" : 1790490791273,
+    "totp" : false,
+    "credentials" : [ {
+      "id" : "e2af850a-6616-4bdf-9a23-1b24e74aebca",
+      "type" : "password",
+      "userLabel" : "My password",
+      "createdDate" : 1790490805194,
+      "secretData" : "{\"value\":\"3nXEjReSNZ4QHLYJyTU4ootszR+sfxtmi0D6zShf52Y=\",\"salt\":\"wIAx5TQFilNIgMMos5RXLg==\",\"additionalParameters\":{}}",
+      "credentialData" : "{\"hashIterations\":5,\"algorithm\":\"argon2\",\"additionalParameters\":{\"hashLength\":[\"32\"],\"memory\":[\"7168\"],\"type\":[\"id\"],\"version\":[\"1.3\"],\"parallelism\":[\"1\"]}}"
+    } ],
+    "disableableCredentialTypes" : [ ],
+    "requiredActions" : [ ],
+    "realmRoles" : [ "default-roles-gwatcho-shop" ],
+    "notBefore" : 0,
+    "groups" : [ ]
+  } ]
+}

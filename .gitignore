@@ -1,0 +1,32 @@
+# Local secrets and environment overrides
+.env
+.env.*
+!.env.example
+
+# Logs and generated data
+*.log
+.DS_Store
+Thumbs.db
+
+# Credentials and private keys
+
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+
+# Logs
+
+*.log
+logs/
+
+# Local database files and backups
+
+*.sql.gz
+*.bak
+
+# Operating system
+
+.DS_Store
+Thumbs.db

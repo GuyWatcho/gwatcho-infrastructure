@@ -1,0 +1,526 @@
+services:
+
+  # ============================================================
+  # MYSQL DATABASES
+  # ============================================================
+
+  mysql-user:
+    image: mysql:8.4
+    container_name: gwatcho-mysql-user
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: user_db
+      MYSQL_USER: user_user
+      MYSQL_PASSWORD: ${MYSQL_USER_PASSWORD:-user_password}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
+    ports:
+      - "${MYSQL_USER_PORT:-3307}:3306"
+    volumes:
+      - mysql-user-data:/var/lib/mysql
+    networks:
+      - gwatcho-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${MYSQL_ROOT_PASSWORD:-root_password}"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  mysql-product:
+    image: mysql:8.4
+    container_name: gwatcho-mysql-product
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: product_db
+      MYSQL_USER: product_user
+      MYSQL_PASSWORD: ${MYSQL_PRODUCT_PASSWORD:-product_password}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
+    ports:
+      - "${MYSQL_PRODUCT_PORT:-3308}:3306"
+    volumes:
+      - mysql-product-data:/var/lib/mysql
+    networks:
+      - gwatcho-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${MYSQL_ROOT_PASSWORD:-root_password}"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  mysql-order:
+    image: mysql:8.4
+    container_name: gwatcho-mysql-order
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: order_db
+      MYSQL_USER: order_user
+      MYSQL_PASSWORD: ${MYSQL_ORDER_PASSWORD:-order_password}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
+    ports:
+      - "${MYSQL_ORDER_PORT:-3309}:3306"
+    volumes:
+      - mysql-order-data:/var/lib/mysql
+    networks:
+      - gwatcho-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${MYSQL_ROOT_PASSWORD:-root_password}"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  mysql-payment:
+    image: mysql:8.4
+    container_name: gwatcho-mysql-payment
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: payment_db
+      MYSQL_USER: payment_user
+      MYSQL_PASSWORD: ${MYSQL_PAYMENT_PASSWORD:-payment_password}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
+    ports:
+      - "${MYSQL_PAYMENT_PORT:-3310}:3306"
+    volumes:
+      - mysql-payment-data:/var/lib/mysql
+    networks:
+      - gwatcho-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${MYSQL_ROOT_PASSWORD:-root_password}"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  mysql-delivery:
+    image: mysql:8.4
+    container_name: gwatcho-mysql-delivery
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: delivery_db
+      MYSQL_USER: delivery_user
+      MYSQL_PASSWORD: ${MYSQL_DELIVERY_PASSWORD:-delivery_password}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
+    ports:
+      - "${MYSQL_DELIVERY_PORT:-3311}:3306"
+    volumes:
+      - mysql-delivery-data:/var/lib/mysql
+    networks:
+      - gwatcho-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${MYSQL_ROOT_PASSWORD:-root_password}"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+
+  # ============================================================
+  # KAFKA
+  # ============================================================
+
+  kafka:
+    image: apache/kafka:4.0.0
+    container_name: gwatcho-kafka
+    restart: unless-stopped
+
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: >
+        PLAINTEXT:PLAINTEXT,
+        CONTROLLER:PLAINTEXT
+
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+    ports:
+      - "${KAFKA_PORT:-9092}:9092"
+
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+
+    networks:
+      - gwatcho-network
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+
+
+  # ============================================================
+  # KEYCLOAK
+  # ============================================================
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.4
+    container_name: gwatcho-keycloak
+    restart: unless-stopped
+
+    command:
+      - start-dev
+      - --import-realm
+
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USERNAME:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+
+    ports:
+      - "${KEYCLOAK_PORT:-8080}:8080"
+
+    volumes:
+      - keycloak-data:/opt/keycloak/data
+      - ./docker/keycloak/import:/opt/keycloak/data/import
+
+    networks:
+      - gwatcho-network
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "exec 3<>/dev/tcp/127.0.0.1/8080"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+
+  # ============================================================
+  # USER SERVICE
+  # ============================================================
+
+  user-service:
+    image: ghcr.io/guybami/gwatcho-user-service:${GWATCHO_USER_SERVICE_VERSION:-1.0.0}
+    build:
+      context: ..
+      dockerfile: gwatcho-user-service/Dockerfile
+
+    container_name: gwatcho-user-service
+    restart: unless-stopped
+
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-user:3306/user_db
+      SPRING_DATASOURCE_USERNAME: user_user
+      SPRING_DATASOURCE_PASSWORD: user_password
+
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/realms/gwatcho-shop
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/gwatcho-shop/protocol/openid-connect/certs
+
+    expose:
+      - "8080"
+
+    depends_on:
+      mysql-user:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+
+    networks:
+      - gwatcho-network
+
+
+  # ============================================================
+  # PRODUCT SERVICE
+  # ============================================================
+
+  product-service:
+    image: ghcr.io/guybami/gwatcho-product-service:${GWATCHO_PRODUCT_SERVICE_VERSION:-1.0.0}
+    build:
+      context: ..
+      dockerfile: gwatcho-product-service/Dockerfile
+
+    container_name: gwatcho-product-service
+    restart: unless-stopped
+
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-product:3306/product_db
+      SPRING_DATASOURCE_USERNAME: product_user
+      SPRING_DATASOURCE_PASSWORD: product_password
+
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/realms/gwatcho-shop
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/gwatcho-shop/protocol/openid-connect/certs
+
+    expose:
+      - "8080"
+
+    depends_on:
+      mysql-product:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+
+    networks:
+      - gwatcho-network
+
+
+  # ============================================================
+  # ORDER SERVICE
+  # ============================================================
+
+  order-service:
+    image: ghcr.io/guybami/gwatcho-order-service:${GWATCHO_ORDER_SERVICE_VERSION:-1.0.0}
+    build:
+      context: ..
+      dockerfile: gwatcho-order-service/Dockerfile
+
+    container_name: gwatcho-order-service
+    restart: unless-stopped
+
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-order:3306/order_db
+      SPRING_DATASOURCE_USERNAME: order_user
+      SPRING_DATASOURCE_PASSWORD: order_password
+
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/realms/gwatcho-shop
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/gwatcho-shop/protocol/openid-connect/certs
+
+    expose:
+      - "8080"
+
+    depends_on:
+      mysql-order:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+
+    networks:
+      - gwatcho-network
+
+
+  # ============================================================
+  # PAYMENT SERVICE
+  # ============================================================
+
+  payment-service:
+    image: ghcr.io/guybami/gwatcho-payment-service:${GWATCHO_PAYMENT_SERVICE_VERSION:-1.0.0}
+    build:
+      context: ..
+      dockerfile: gwatcho-payment-service/Dockerfile
+
+    container_name: gwatcho-payment-service
+    restart: unless-stopped
+
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-payment:3306/payment_db
+      SPRING_DATASOURCE_USERNAME: payment_user
+      SPRING_DATASOURCE_PASSWORD: payment_password
+
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/realms/gwatcho-shop
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/gwatcho-shop/protocol/openid-connect/certs
+
+    expose:
+      - "8080"
+
+    depends_on:
+      mysql-payment:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+
+    networks:
+      - gwatcho-network
+
+
+  # ============================================================
+  # DELIVERY SERVICE
+  # ============================================================
+
+  delivery-service:
+    image: ghcr.io/guybami/gwatcho-delivery-service:${GWATCHO_DELIVERY_SERVICE_VERSION:-1.0.0}
+    build:
+      context: ..
+      dockerfile: gwatcho-delivery-service/Dockerfile
+
+    container_name: gwatcho-delivery-service
+    restart: unless-stopped
+
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-delivery:3306/delivery_db
+      SPRING_DATASOURCE_USERNAME: delivery_user
+      SPRING_DATASOURCE_PASSWORD: delivery_password
+
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8080/realms/gwatcho-shop
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/gwatcho-shop/protocol/openid-connect/certs
+
+    expose:
+      - "8080"
+
+    depends_on:
+      mysql-delivery:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+
+    networks:
+      - gwatcho-network
+
+
+  # ============================================================
+  # API GATEWAY
+  # ============================================================
+
+  api-gateway:
+    image: ghcr.io/guybami/gwatcho-api-gateway:${GWATCHO_API_GATEWAY_VERSION:-1.0.0}
+    build:
+      context: ..
+      dockerfile: gwatcho-api-gateway/Dockerfile
+
+    container_name: gwatcho-api-gateway
+    restart: unless-stopped
+
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+
+    ports:
+      - "${API_GATEWAY_PORT:-8085}:8085"
+
+    depends_on:
+      user-service:
+        condition: service_started
+      product-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+      payment-service:
+        condition: service_started
+      delivery-service:
+        condition: service_started
+
+    networks:
+      - gwatcho-network
+    
+  # ============================================================
+  # Angular frontend
+  # ============================================================
+
+  angular-frontend:
+    image: ghcr.io/guybami/gwatcho-angular-frontend:${GWATCHO_ANGULAR_FRONTEND_VERSION:-1.0.0}
+    build:
+      context: ../gwatcho-angular-frontend
+      dockerfile: Dockerfile
+    container_name: gwatcho-angular
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - gwatcho-network
+    
+# ==============================================================
+# VOLUMES
+# ==============================================================
+
+volumes:
+  mysql-user-data:
+  mysql-product-data:
+  mysql-order-data:
+  mysql-payment-data:
+  mysql-delivery-data:
+  kafka-data:
+  keycloak-data:
+
+
+# ==============================================================
+# NETWORK
+# ==============================================================
+
+networks:
+  gwatcho-network:
+    driver: bridge

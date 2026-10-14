@@ -1,0 +1,20 @@
+
+
+docker run -d --name kafbat-ui --restart unless-stopped --network $network -p 8082:8080 -e DYNAMIC_CONFIG_ENABLED=true -e KAFKA_CLUSTERS_0_NAME=gwatcho-local -e KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=gwatcho-kafka:9092   ghcr.io/kafbat/kafka-ui:latest
+
+
+ 
+ boolean valid = switch (current) {
+            case CREATED ->
+                    next == DeliveryStatus.PREPARING
+                            || next == DeliveryStatus.CANCELLED;
+
+            case PREPARING ->
+                    next == DeliveryStatus.SHIPPED
+                            || next == DeliveryStatus.CANCELLED;
+
+            case SHIPPED ->
+                    next == DeliveryStatus.DELIVERED;
+
+            case DELIVERED, CANCELLED -> false;
+        };

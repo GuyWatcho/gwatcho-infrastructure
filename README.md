@@ -27,7 +27,13 @@ MicroServicesApp/
 
 The Compose file builds each application from its sibling repository and expects a `Dockerfile` at that repository's root. If your local folder names or Dockerfile locations differ, update the corresponding `build.context` or `build.dockerfile` entries in `docker-compose.yml`.
 
-See [docs/versioning.md](docs/versioning.md) for application versions and Docker image tags. Run `scripts/version-services.ps1` to apply the versions.\n\n## Prerequisites
+See [docs/versioning.md](docs/versioning.md) for application versions and Docker image tags. Run `scripts/version-services.ps1` to apply the versions.\n\n## CI/CD deployment
+
+The Angular frontend is built, tested, published to GitHub Container Registry (GHCR), and deployed automatically by the GitHub Actions workflow in `gwatcho-angular-frontend` after a successful push to `develop`.
+
+See [docs/ci-cd-angular-deployment.md](docs/ci-cd-angular-deployment.md) for the pipeline stages, Windows self-hosted runner setup, image tags, deployment commands, verification steps, and troubleshooting.
+
+## Prerequisites
 
 - Docker Desktop with Docker Compose v2
 - All seven application repositories checked out in the sibling layout above

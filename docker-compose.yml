@@ -261,7 +261,7 @@ services:
   # ============================================================
 
   user-service:
-    image: ghcr.io/guybami/gwatcho-user-service:${GWATCHO_USER_SERVICE_VERSION:-1.0.0}
+    image: ghcr.io/guywatcho/gwatcho-user-service:${GWATCHO_USER_SERVICE_VERSION:-1.0.0}
     build:
       context: ..
       dockerfile: gwatcho-user-service/Dockerfile

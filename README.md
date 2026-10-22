@@ -140,3 +140,8 @@ docker compose logs --tail=200
 ```
 
 If a container cannot connect to a database or Kafka, verify that it uses the Compose service hostname rather than `localhost`. Inside a container, `localhost` refers to that same container.
+
+
+## Kubernetes and release roadmap
+
+The staged local Kubernetes and versioned release plan is documented in [docs/kubernetes/local-kubernetes-release-plan.md](docs/kubernetes/local-kubernetes-release-plan.md). The initial Kubernetes implementation area is [kubernetes/README.md](kubernetes/README.md). The existing Docker Compose environment and application CI workflows remain unchanged.

@@ -25,6 +25,9 @@ I validated the complete customer journey, including authentication, product bro
 - **MySQL** — separate database instances for user, product, order, payment and delivery data.
 - **Docker Compose / Nginx** — local orchestration and HTTP entry/routing.
 
+  <img width="881" height="740" alt="Architecture-1" src="https://github.com/user-attachments/assets/147c747d-0817-4bf0-85d7-d35f1c38febd" />
+
+
 ## High-level request and event paths
 
 1. A customer uses the Angular application.

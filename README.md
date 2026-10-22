@@ -3,6 +3,13 @@
 Local Docker Compose environment for the GWatcho e-commerce microservices platform.
 
 
+
+## Project documentation
+
+- [Architecture overview](https://github.com/GuyWatcho/gwatcho-infrastructure/blob/main/docs/portfolio/architecture.md)
+- [Technical interview guide](https://github.com/GuyWatcho/gwatcho-infrastructure/blob/main/docs/portfolio/interview-guide.md)
+- [End-to-end demo checklist](https://github.com/GuyWatcho/gwatcho-infrastructure/blob/main/docs/portfolio/demo-checklist.md)
+
 ## What this repository contains
 
 - Docker Compose configuration for five MySQL databases, Kafka, Keycloak, five backend services, the API Gateway, and Angular frontend.

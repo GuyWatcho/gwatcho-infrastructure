@@ -3,6 +3,13 @@
 ## System context
 
 GWatcho Shop is a containerized e-commerce demo built from separate application repositories and orchestrated locally with Docker Compose. The infrastructure repository includes the Compose environment, Nginx/API entry configuration, Keycloak realm imports, Kafka, five MySQL databases, seed data, and PowerShell helper scripts.
+I developed a full-stack e-commerce application to demonstrate microservices architecture, secure API access, event-driven communication, and automated deployment.
+
+The frontend is built with Angular, while the backend consists of independent Spring Boot services for users, products, orders, payments, and delivery. An API Gateway provides a central entry point, and Keycloak handles authentication using OpenID Connect and JWTs.
+
+For asynchronous communication, I use Apache Kafka. The order workflow incorporates the Transactional Outbox pattern to improve reliability when publishing business events. The application is containerized with Docker Compose, and GitHub Actions automates testing, publishing images to GitHub Container Registry, and deploying individual services to a Windows self-hosted runner.
+
+I validated the complete customer journey, including authentication, product browsing, checkout, payment and delivery events, persistence across container restarts, and automated deployment.
 
 ## Main components
 

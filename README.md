@@ -8,6 +8,8 @@ Local Docker Compose environment for the GWatcho e-commerce microservices platfo
 
 - [Architecture overview](https://github.com/GuyWatcho/gwatcho-infrastructure/blob/main/docs/portfolio/architecture.md)
 - [End-to-end demo checklist](https://github.com/GuyWatcho/gwatcho-infrastructure/blob/main/docs/portfolio/demo-checklist.md)
+- [Local Kubernetes deployment runbook](https://github.com/GuyWatcho/gwatcho-infrastructure/blob/develop/docs/kubernetes/local-kubernetes-deployment-runbook.md)
+- [Kubernetes release roadmap](https://github.com/GuyWatcho/gwatcho-infrastructure/blob/develop/docs/kubernetes/local-kubernetes-release-plan.md)
 
 ## What this repository contains
 
@@ -140,7 +142,6 @@ docker compose logs --tail=200
 ```
 
 If a container cannot connect to a database or Kafka, verify that it uses the Compose service hostname rather than `localhost`. Inside a container, `localhost` refers to that same container.
-
 
 ## Kubernetes and release roadmap
 

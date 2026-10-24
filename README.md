@@ -1,13 +1,13 @@
-# GWatcho e-Commerce  Infrastructure
+# GWatcho e-Commerce Infrastructure
 
 Local Docker Compose environment for the GWatcho e-commerce microservices platform.
-
-
 
 ## Project documentation
 
 - [Architecture overview](https://github.com/GuyWatcho/gwatcho-infrastructure/blob/main/docs/portfolio/architecture.md)
 - [End-to-end demo checklist](https://github.com/GuyWatcho/gwatcho-infrastructure/blob/main/docs/portfolio/demo-checklist.md)
+- [Local Kubernetes deployment runbook](https://github.com/GuyWatcho/gwatcho-infrastructure/blob/main/docs/kubernetes/local-kubernetes-deployment-runbook.md)
+- [Kubernetes release roadmap](https://github.com/GuyWatcho/gwatcho-infrastructure/blob/main/docs/kubernetes/local-kubernetes-release-plan.md)
 
 ## What this repository contains
 
@@ -34,7 +34,9 @@ MicroServicesApp/
 
 The Compose file builds each application from its sibling repository and expects a `Dockerfile` at that repository's root. If your local folder names or Dockerfile locations differ, update the corresponding `build.context` or `build.dockerfile` entries in `docker-compose.yml`.
 
-See [docs/versioning.md](docs/versioning.md) for application versions and Docker image tags. Run `scripts/version-services.ps1` to apply the versions.\n\n## CI/CD deployment
+See [docs/versioning.md](docs/versioning.md) for application versions and Docker image tags. Run `scripts/version-services.ps1` to apply the versions.
+
+## CI/CD deployment
 
 The Angular frontend is built, tested, published to GitHub Container Registry (GHCR), and deployed automatically by the GitHub Actions workflow in `gwatcho-angular-frontend` after a successful push to `develop`.
 
@@ -140,7 +142,6 @@ docker compose logs --tail=200
 ```
 
 If a container cannot connect to a database or Kafka, verify that it uses the Compose service hostname rather than `localhost`. Inside a container, `localhost` refers to that same container.
-
 
 ## Kubernetes and release roadmap
 

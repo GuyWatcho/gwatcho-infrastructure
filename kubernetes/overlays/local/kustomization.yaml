@@ -3,3 +3,4 @@ kind: Kustomization
 namespace: gwatcho-local
 resources:
   - ../../base/product-service
+  - ../../base/user-service

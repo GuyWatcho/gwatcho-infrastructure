@@ -4,3 +4,4 @@ namespace: gwatcho-local
 resources:
   - ../../base/product-service
   - ../../base/user-service
+  - ../../base/order-service

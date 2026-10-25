@@ -5,3 +5,4 @@ resources:
   - ../../base/product-service
   - ../../base/user-service
   - ../../base/order-service
+  - ../../base/payment-service

@@ -6,3 +6,4 @@ resources:
   - ../../base/user-service
   - ../../base/order-service
   - ../../base/payment-service
+  - ../../base/delivery-service

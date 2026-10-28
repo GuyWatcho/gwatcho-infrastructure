@@ -211,3 +211,10 @@ kubectl rollout status deployment/product-service -n gwatcho-local --timeout=180
 The first Product Service workload was applied successfully in namespace `gwatcho-local`. The Deployment rollout completed, the health endpoint returned `UP`, the Products API returned HTTP 200, and the Kafka consumer successfully joined the `product-service` consumer group after configuring the external listener.
 
 This milestone proves the first local workload only. It does not mean that all microservices or a production deployment are ready. Continue with one service at a time and run end-to-end smoke tests before expanding the deployment.
+
+
+## Keycloak and Kafka migrations
+
+See the [Keycloak and Kafka Kubernetes Migration Guide](../docs/kubernetes/keycloak-kafka-migration.md) for the local Keycloak/MySQL architecture, realm and issuer validation, Kafka KRaft Services and storage, application-topic recreation, Spring Boot configuration, and verification commands.
+
+Kafka's Kubernetes broker is available as `kafka:9092` inside the namespace. The service cutover is separate: update and verify each producer/consumer Deployment before retiring the old Docker broker. Keep existing Docker volumes until validation is complete.

@@ -6,7 +6,7 @@ The Angular frontend is deployed in the local Kubernetes cluster in namespace `g
 
 ## Architecture diagram
 
-The diagram shows the intended logical connections. Solid arrows represent HTTP/API traffic; dashed arrows represent authentication or messaging/infrastructure connections. The exact host ports, database names, and Kafka topic names should be confirmed against the current Docker Compose and application configuration.
+The diagram shows the intended logical connections. Solid arrows represent HTTP/API traffic; dashed arrows represent authentication or messaging/infrastructure connections. Kubernetes-hosted Keycloak and Kafka are shown in the Kubernetes group. Database placement and service cutover status can differ during this staged migration; confirm current resource configuration before changing workloads.
 
 ```mermaid
 flowchart TB

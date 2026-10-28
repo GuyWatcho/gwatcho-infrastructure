@@ -33,3 +33,10 @@ Read [Local Kubernetes and Release/Production Roadmap](../docs/kubernetes/local-
 - Do not commit real passwords, tokens, private keys, decoded Secret values, or kubeconfig contents.
 - Do not assume Compose-only DNS names such as `mysql-product` or `kafka` resolve from Kubernetes pods.
 - Verify Kafka advertised listeners and database connectivity from the Kubernetes workload itself.
+
+
+## Keycloak and Kafka migrations
+
+See the [Keycloak and Kafka Kubernetes Migration Guide](../docs/kubernetes/keycloak-kafka-migration.md) for the current local architecture, namespace and Service names, realm/issuer validation, Kafka KRaft listener settings, topic recreation, Spring Boot bootstrap configuration, verification commands, and storage safety notes.
+
+The Kafka broker is deployed in Kubernetes, but dependent application Deployments must be switched and verified separately before the Docker broker can be retired. Keep existing Docker volumes until the migration is validated.

@@ -1,4 +1,4 @@
-﻿apiVersion: apps/v1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: product-service
@@ -15,6 +15,8 @@ spec:
       labels:
         app: product-service
     spec:
+      imagePullSecrets:
+        - name: ghcr-pull-secret
       containers:
         - name: product-service
           image: ghcr.io/guywatcho/gwatcho-product-service:develop-latest
@@ -28,7 +30,7 @@ spec:
             - name: SERVER_PORT
               value: "8080"
             - name: SPRING_DATASOURCE_URL
-              value: jdbc:mysql://host.docker.internal:3308/product_db?serverTimezone=Europe/Berlin
+              value: jdbc:mysql://mysql-product:3306/product_db?serverTimezone=Europe/Berlin
             - name: SPRING_DATASOURCE_USERNAME
               valueFrom:
                 secretKeyRef:

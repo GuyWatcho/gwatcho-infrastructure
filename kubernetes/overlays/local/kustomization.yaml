@@ -1,9 +1,18 @@
-﻿apiVersion: kustomize.config.k8s.io/v1beta1
+apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: gwatcho-local
 resources:
-  - ../../base/product-service
-  - ../../base/user-service
-  - ../../base/order-service
-  - ../../base/payment-service
-  - ../../base/delivery-service
+  - ../../base/databases/mysql-keycloak
+  - ../../base/databases/mysql-user
+  - ../../base/databases/mysql-product
+  - ../../base/databases/mysql-order
+  - ../../base/databases/mysql-payment
+  - ../../base/databases/mysql-delivery
+  - ../../base/services/product-service
+  - ../../base/services/user-service
+  - ../../base/services/order-service
+  - ../../base/services/payment-service
+  - ../../base/services/delivery-service    
+  - ../../base/kafka
+  - ../../base/keycloak
+  

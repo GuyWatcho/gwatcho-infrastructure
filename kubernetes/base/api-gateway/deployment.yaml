@@ -24,6 +24,21 @@ spec:
           ports:
             - name: http
               containerPort: 8085
+          
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: docker
+            - name: SERVER_PORT
+              value: "8085"
+
+            # The JWT issuer must match the issuer in issued tokens.
+            - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
+              value: http://localhost:8080/realms/gwatcho-shop
+
+            # Internal pod-to-host access for JWK retrieval.
+            - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI
+              value: http://host.docker.internal:8080/realms/gwatcho-shop/protocol/openid-connect/certs
+              
           readinessProbe:
             httpGet:
               path: /actuator/health

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-delivery
+  namespace: gwatcho-local
+spec:
+  type: ClusterIP
+  selector:
+    app: mysql-delivery
+  ports:
+    - name: mysql
+      port: 3306
+      targetPort: 3306

@@ -1,0 +1,288 @@
+name: User Service CI/CD
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root4Web!
+          MYSQL_DATABASE: test_user_db
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot4Web!"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+      kafka:
+        image: apache/kafka:4.0.0
+        ports:
+          - 9092:9092
+        env:
+          KAFKA_NODE_ID: 1
+          KAFKA_PROCESS_ROLES: broker,controller
+          KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+          KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+          KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+          KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+          KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+          KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+          KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+          KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+    steps:
+      - name: Checkout user-service
+        uses: actions/checkout@v4
+
+      - name: Checkout shared Maven parent repository
+        uses: actions/checkout@v4
+        with:
+          repository: GuyWatcho/gwatcho-maven-parent
+          ref: main
+          path: shared-maven-parent
+          token: ${{ secrets.MAVEN_PARENT_REPO_TOKEN }}
+
+      - name: Verify shared Maven parent
+        shell: bash
+        run: |
+          test -f shared-maven-parent/pom.xml || {
+            echo "ERROR: shared-maven-parent/pom.xml was not found."
+            exit 1
+          }
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Install shared Maven parent
+        run: >
+          mvn --batch-mode --no-transfer-progress
+          -f shared-maven-parent/pom.xml install -N
+
+      - name: Wait for Kafka
+        shell: bash
+        run: |
+          for i in {1..30}; do
+            if bash -c '</dev/tcp/localhost/9092' 2>/dev/null; then
+              echo "Kafka is accepting connections."
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo "ERROR: Kafka did not become ready."
+          exit 1
+
+      - name: Build and test
+        env:
+          SPRING_PROFILES_ACTIVE: test
+          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/test_user_db?createDatabaseIfNotExist=true&serverTimezone=Europe/Berlin
+          SPRING_DATASOURCE_USERNAME: root
+          SPRING_DATASOURCE_PASSWORD: root4Web!
+          SPRING_KAFKA_BOOTSTRAP_SERVERS: localhost:9092
+        run: mvn --batch-mode --no-transfer-progress clean verify
+
+  publish-service:
+    name: Build and Publish Docker Image
+    needs: test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout user-service
+        uses: actions/checkout@v4
+
+      - name: Checkout shared Maven parent
+        uses: actions/checkout@v4
+        with:
+          repository: GuyWatcho/gwatcho-maven-parent
+          ref: main
+          path: shared-maven-parent
+          token: ${{ secrets.MAVEN_PARENT_REPO_TOKEN }}
+
+      - name: Verify Docker build inputs
+        shell: bash
+        run: |
+          test -f Dockerfile
+          test -f pom.xml
+          test -d src
+          test -f shared-maven-parent/pom.xml
+
+      - name: Prepare Docker build context
+        shell: bash
+        run: |
+          mkdir -p docker-build/gwatcho-user-service
+          mkdir -p docker-build/gwatcho-maven-parent
+
+          cp Dockerfile docker-build/Dockerfile
+          cp pom.xml docker-build/gwatcho-user-service/pom.xml
+          cp -r src docker-build/gwatcho-user-service/src
+          cp shared-maven-parent/pom.xml \
+            docker-build/gwatcho-maven-parent/pom.xml
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/guywatcho/gwatcho-user-service
+          tags: |
+            type=raw,value=develop-latest,enable=${{ github.ref == 'refs/heads/develop' }}
+            type=raw,value=main-latest,enable=${{ github.ref == 'refs/heads/main' }}
+            type=sha
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: docker-build
+          file: docker-build/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  deploy-kubernetes:
+    name: Deploy User Service to Kubernetes
+    needs: publish-service
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
+    runs-on: [self-hosted, Windows, X64, docker-deploy]
+
+    env:
+      KUBE_CONTEXT: ${{ vars.KUBE_CONTEXT }}
+      KUBE_NAMESPACE: ${{ vars.KUBE_NAMESPACE }}
+
+    steps:
+      - name: Validate Kubernetes deployment prerequisites
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          if ([string]::IsNullOrWhiteSpace($env:KUBE_CONTEXT)) {
+            throw "Repository variable KUBE_CONTEXT is not configured. Set it to the exact Kubernetes context available to the self-hosted runner."
+          }
+
+          if ([string]::IsNullOrWhiteSpace($env:KUBE_NAMESPACE)) {
+            throw "Repository variable KUBE_NAMESPACE is not configured. Set it to gwatcho-local."
+          }
+
+          if (-not (Get-Command kubectl -ErrorAction SilentlyContinue)) {
+            throw "kubectl is not installed or is not on PATH for the Windows runner service account."
+          }
+
+          kubectl config get-contexts
+          if ($LASTEXITCODE -ne 0) { throw "Could not read kubeconfig for the Windows runner service account." }
+
+          $contexts = @(kubectl config get-contexts -o name)
+          if ($LASTEXITCODE -ne 0) {
+            throw "Could not list Kubernetes contexts from the runner's kubeconfig."
+          }
+          if ($contexts -notcontains $env:KUBE_CONTEXT) {
+            throw "KUBE_CONTEXT '$env:KUBE_CONTEXT' is not present in the runner's kubeconfig."
+          }
+
+          kubectl cluster-info --context $env:KUBE_CONTEXT
+          if ($LASTEXITCODE -ne 0) {
+            throw "Cannot access Kubernetes context '$env:KUBE_CONTEXT'. Check kubeconfig and cluster availability."
+          }
+
+          kubectl get namespace $env:KUBE_NAMESPACE --context $env:KUBE_CONTEXT
+          if ($LASTEXITCODE -ne 0) {
+            throw "Namespace '$env:KUBE_NAMESPACE' is not accessible in the selected context."
+          }
+
+          kubectl get deployment user-service -n $env:KUBE_NAMESPACE --context $env:KUBE_CONTEXT
+          if ($LASTEXITCODE -ne 0) {
+            throw "Deployment user-service was not found. Apply the infrastructure manifests before enabling CI deployment."
+          }
+
+          kubectl get secret ghcr-pull-secret -n $env:KUBE_NAMESPACE --context $env:KUBE_CONTEXT
+          if ($LASTEXITCODE -ne 0) {
+            throw "Secret ghcr-pull-secret is missing in the target namespace."
+          }
+
+          Write-Host "Kubernetes preflight passed."
+
+      - name: Select image tag
+        id: image
+        shell: powershell
+        run: |
+          if ("${{ github.ref }}" -eq "refs/heads/develop") {
+            "IMAGE_TAG=develop-latest" >> $env:GITHUB_ENV
+          }
+          elseif ("${{ github.ref }}" -eq "refs/heads/main") {
+            "IMAGE_TAG=main-latest" >> $env:GITHUB_ENV
+          }
+          else {
+            throw "Unsupported ref for Kubernetes deployment: ${{ github.ref }}"
+          }
+
+      - name: Update Kubernetes deployment image
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $image = "ghcr.io/guywatcho/gwatcho-user-service:$env:IMAGE_TAG"
+
+          Write-Host "Deploying image: $image"
+          kubectl set image deployment/user-service `
+            user-service=$image `
+            -n $env:KUBE_NAMESPACE `
+            --context $env:KUBE_CONTEXT
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "kubectl set image failed."
+          }
+
+      - name: Wait for rollout
+        shell: powershell
+        run: |
+          kubectl rollout status deployment/user-service `
+            -n $env:KUBE_NAMESPACE `
+            --context $env:KUBE_CONTEXT `
+            --timeout=180s
+
+          if ($LASTEXITCODE -ne 0) {
+            throw "Kubernetes rollout failed. Inspect pod events and logs before retrying."
+          }
+
+      - name: Verify deployed pod
+        shell: powershell
+        run: |
+          kubectl get deployment user-service -n $env:KUBE_NAMESPACE --context $env:KUBE_CONTEXT
+          if ($LASTEXITCODE -ne 0) { throw "Could not verify user-service Deployment." }
+
+          kubectl get pods -n $env:KUBE_NAMESPACE --context $env:KUBE_CONTEXT |
+            Select-String "user-service"

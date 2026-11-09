@@ -3,18 +3,7 @@
 docker run -d --name kafbat-ui --restart unless-stopped --network $network -p 8082:8080 -e DYNAMIC_CONFIG_ENABLED=true -e KAFKA_CLUSTERS_0_NAME=gwatcho-local -e KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=gwatcho-kafka:9092   ghcr.io/kafbat/kafka-ui:latest
 
 
- 
- boolean valid = switch (current) {
-            case CREATED ->
-                    next == DeliveryStatus.PREPARING
-                            || next == DeliveryStatus.CANCELLED;
-
-            case PREPARING ->
-                    next == DeliveryStatus.SHIPPED
-                            || next == DeliveryStatus.CANCELLED;
-
-            case SHIPPED ->
-                    next == DeliveryStatus.DELIVERED;
-
-            case DELIVERED, CANCELLED -> false;
-        };
+  $token = Read-Host "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJzcEIwYjBuY0p5RUlRY1V4MXl3bXZYUXJ3NkVuTUNrWm5lVlU3ZmNpMEpNIn0.eyJleHAiOjE3OTMwMzQwMTYsImlhdCI6MTc5MzAzMzcxNiwianRpIjoib25ydHJvOjg5NjdhMzFhLTM0MzAtZWMxYS1mMDQ2LWMwM2Y0OWY2ZTllYSIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9yZWFsbXMvZ3dhdGNoby1zaG9wIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6IjZjOTE3ZjRkLTMxYjgtNGVmNi04NmM5LTJkYmQ5YTA1MjA1MiIsInR5cCI6IkJlYXJlciIsImF6cCI6ImUyZS10ZXN0LWNsaWVudCIsInNpZCI6ImZkYTAyYmQ1LThlYzQtZGIwNy0yODk5LWNiODQzM2U2MDJkYiIsImFjciI6IjEiLCJhbGxvd2VkLW9yaWdpbnMiOlsiIl0sInJlYWxtX2FjY2VzcyI6eyJyb2xlcyI6WyJvZmZsaW5lX2FjY2VzcyIsIkNVU1RPTUVSIiwiZGVmYXVsdC1yb2xlcy1nd2F0Y2hvLXNob3AiLCJ1bWFfYXV0aG9yaXphdGlvbiJdfSwicmVzb3VyY2VfYWNjZXNzIjp7ImFjY291bnQiOnsicm9sZXMiOlsibWFuYWdlLWFjY291bnQiLCJtYW5hZ2UtYWNjb3VudC1saW5rcyIsInZpZXctcHJvZmlsZSJdfX0sInNjb3BlIjoicHJvZmlsZSBlbWFpbCIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwibmFtZSI6IkN1c3RvbWVyIE9uZSIsInByZWZlcnJlZF91c2VybmFtZSI6ImN1c3RvbWVyMSIsImdpdmVuX25hbWUiOiJDdXN0b21lciIsImZhbWlseV9uYW1lIjoiT25lIiwiZW1haWwiOiJjdXN0b21lcjFAZ3dhdGNoby1zaG9wLmxvY2FsIn0.pb6SZE8hMvlOlrHMuez2AgFYeDW03xYkQ5YeZJesQeZWrkAiUF6PZqYWa7c02c0O3JUQqEb_9OoM43yo0zFWF0nz3rNa56nL_LknX2fQx9EVG6qLHdtLFkt5ror-pIG7eNQSMGvMS7KMxK1X5fxG3EVcknVL3t2VERVvWUjcMcS8pChvqnLUTfOHIKFve-IOsce8kf1DEZHbXF3tEigDIcGD5mQ2KIcE_73w8A5aTzScRUvPC2CuIcrMmct0DtgStlKoFtnmmX0VajuuwtsCKKS3QSNFoAa7O_iZN7XJ8HZdtsORieS-J4owB7nbeKihpD7Y-pe5nYjqmGlmEkgjSg"
+$headers = @{
+    Authorization = "Bearer $token"
+}

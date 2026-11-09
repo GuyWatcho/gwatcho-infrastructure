@@ -1,19 +1,22 @@
-# GWatcho e-Commerce  Infrastructure
+# GWatcho e-Commerce Infrastructure
 
-Local Docker Compose environment for the GWatcho e-commerce microservices platform.
-
-
+Local Docker Compose environment and Kubernetes manifests for the GWatcho e-commerce microservices platform.
 
 ## Project documentation
 
-- [Architecture overview](https://github.com/GuyWatcho/gwatcho-infrastructure/blob/main/docs/portfolio/architecture.md)
-- [End-to-end demo checklist](https://github.com/GuyWatcho/gwatcho-infrastructure/blob/main/docs/portfolio/demo-checklist.md)
-- [Local Kubernetes deployment runbook](https://github.com/GuyWatcho/gwatcho-infrastructure/blob/develop/docs/kubernetes/local-kubernetes-deployment-runbook.md)
-- [Kubernetes release roadmap](https://github.com/GuyWatcho/gwatcho-infrastructure/blob/develop/docs/kubernetes/local-kubernetes-release-plan.md)
+- [Architecture overview](docs/portfolio/architecture.md)
+- [Final application architecture — Docker Desktop Kubernetes](docs/portfolio/final-architecture.md)
+- [End-to-end demo checklist](docs/portfolio/demo-checklist.md)
+- [Local Kubernetes deployment — v1.1.0](docs/kubernetes/local-kubernetes-deployment.md)
+- [Local Kubernetes deployment runbook](docs/kubernetes/local-kubernetes-deployment-runbook.md)
+- [Kubernetes release roadmap](docs/kubernetes/local-kubernetes-release-plan.md)
+- [Kubernetes manifests and Product Service guide](kubernetes/README.md)
+- [CI/CD Angular deployment](docs/ci-cd-angular-deployment.md)
 
 ## What this repository contains
 
 - Docker Compose configuration for five MySQL databases, Kafka, Keycloak, five backend services, the API Gateway, and Angular frontend.
+- Kubernetes manifests and local deployment documentation.
 - Keycloak realm and user import files.
 - Product seed SQL containing 300 sample products.
 - Example environment variables and PowerShell helper scripts.
@@ -36,25 +39,28 @@ MicroServicesApp/
 
 The Compose file builds each application from its sibling repository and expects a `Dockerfile` at that repository's root. If your local folder names or Dockerfile locations differ, update the corresponding `build.context` or `build.dockerfile` entries in `docker-compose.yml`.
 
-See [docs/versioning.md](docs/versioning.md) for application versions and Docker image tags. Run `scripts/version-services.ps1` to apply the versions.\n\n## CI/CD deployment
+See [docs/versioning.md](docs/versioning.md) for application versions and Docker image tags. Run `scripts/version-services.ps1` to apply the versions.
 
-The Angular frontend is built, tested, published to GitHub Container Registry (GHCR), and deployed automatically by the GitHub Actions workflow in `gwatcho-angular-frontend` after a successful push to `develop`.
+## CI/CD deployment
 
-See [docs/ci-cd-angular-deployment.md](docs/ci-cd-angular-deployment.md) for the pipeline stages, Windows self-hosted runner setup, image tags, deployment commands, verification steps, and troubleshooting.
+Application repositories own their build and test workflows. The Angular frontend is built, tested, published to GitHub Container Registry (GHCR), and deployed to local Kubernetes by the configured Windows self-hosted GitHub Actions runner.
+
+See [docs/ci-cd-angular-deployment.md](docs/ci-cd-angular-deployment.md) for the pipeline stages, runner setup, image tags, deployment commands, verification steps, and troubleshooting.
 
 ## Prerequisites
 
-- Docker Desktop with Docker Compose v2
-- All seven application repositories checked out in the sibling layout above
-- Ports 80, 8080, 8085, 9092, and 3307–3311 available
+- Docker Desktop with Docker Compose v2 and Kubernetes enabled for the local Kubernetes environment.
+- `kubectl` configured for the intended cluster context.
+- All seven application repositories checked out in the sibling layout above when using the Compose build workflow.
+- Ports required by the selected local environment available.
 
-## Start the platform (Windows PowerShell)
+## Start the Docker Compose platform (Windows PowerShell)
 
 From this directory:
 
 ```powershell
 Copy-Item .env.example .env
-# Edit .env if needed, then:
+# Edit .env with local development values, then:
 docker compose config
 docker compose up --build -d
 docker compose ps
@@ -74,7 +80,7 @@ docker compose logs -f user-service
 docker compose logs -f api-gateway
 ```
 
-## Local endpoints
+## Docker Compose local endpoints
 
 | Component | URL / port |
 |---|---|
@@ -100,15 +106,9 @@ The realm import file may contain realm/client configuration and development tes
 
 `docker/mysql/product/products.sql` contains 300 product inserts for `product_db`. It is kept as an explicit seed script rather than automatically mounted into MySQL's initialization directory: the `products` table must exist before the inserts run.
 
-To import it after the product service has created the table, use a MySQL client against `localhost:3308`, selecting database `product_db`. Example:
+Avoid re-running the script against a database that already contains the same SKUs; the inserts may fail on unique constraints.
 
-```powershell
-Get-Content .\docker\mysql\product\products.sql | docker exec -i gwatcho-mysql-product mysql -u product_user -pproduct_password product_db
-```
-
-If you changed the password in `.env`, replace `product_password` in the command accordingly. Avoid re-running the script against a database that already contains the same SKUs; the inserts may fail on unique constraints.
-
-## Stop the platform
+## Stop the Docker Compose platform
 
 ```powershell
 docker compose down
@@ -126,23 +126,16 @@ Or run `.\scripts\stop.ps1` to stop containers without deleting volumes.
 
 ## Security notes
 
-- This repository is for local development, not production deployment.
+- This repository is for local development and demo deployment, not production deployment.
 - Change all default passwords in `.env`; never commit `.env`.
 - Use a proper secret store and TLS for production.
 - Keycloak uses `start-dev`; configure production mode, hostname, HTTPS, and a persistent production database before deployment.
 - Confirm that the realm's issuer URLs and frontend redirect URLs match your environment.
 - Exposed MySQL and Kafka ports are for local developer access; restrict or remove them for shared deployments.
-
-## Troubleshooting
-
-```powershell
-docker compose config
-docker compose ps
-docker compose logs --tail=200
-```
-
-If a container cannot connect to a database or Kafka, verify that it uses the Compose service hostname rather than `localhost`. Inside a container, `localhost` refers to that same container.
+- Never commit kubeconfig files, tokens, decoded Kubernetes Secret values, passwords, or private keys.
 
 ## Kubernetes and release roadmap
 
-The staged local Kubernetes and versioned release plan is documented in [docs/kubernetes/local-kubernetes-release-plan.md](docs/kubernetes/local-kubernetes-release-plan.md). The initial Kubernetes implementation area is [kubernetes/README.md](kubernetes/README.md). The existing Docker Compose environment and application CI workflows remain unchanged.
+The local Docker Desktop Kubernetes deployment baseline is documented in [docs/kubernetes/local-kubernetes-deployment.md](docs/kubernetes/local-kubernetes-deployment.md). The component and network topology is documented in [docs/portfolio/final-architecture.md](docs/portfolio/final-architecture.md). The staged release roadmap is in [docs/kubernetes/local-kubernetes-release-plan.md](docs/kubernetes/local-kubernetes-release-plan.md).
+
+The local Kubernetes deployment is the v1.1.0 milestone. The next planned infrastructure milestone is migration to Azure Kubernetes Service (AKS). The existing Docker Compose environment remains documented and available as a separate local workflow.

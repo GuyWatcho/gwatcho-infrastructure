@@ -1,0 +1,13 @@
+﻿apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultAuth
+metadata:
+  name: product-service-vault-auth
+  namespace: gwatcho-local
+spec:
+  method: kubernetes
+  mount: kubernetes
+  vaultConnectionRef: vault-local
+  kubernetes:
+    role: gwatcho-product-service-role
+    serviceAccount: vso-product-service
+    tokenExpirationSeconds: 600

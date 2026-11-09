@@ -1,0 +1,76 @@
+-- MySQL dump 10.13  Distrib 8.4.11, for Linux (x86_64)
+--
+-- Host: localhost    Database: payment_db
+-- ------------------------------------------------------
+-- Server version	8.4.11
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!50503 SET NAMES utf8mb4 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Current Database: `payment_db`
+--
+
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `payment_db` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+
+USE `payment_db`;
+
+--
+-- Table structure for table `payments`
+--
+
+DROP TABLE IF EXISTS `payments`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `payments` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `amount` decimal(19,2) NOT NULL,
+  `created_at` datetime(6) NOT NULL,
+  `currency` varchar(3) NOT NULL,
+  `customer_id` bigint NOT NULL,
+  `order_id` bigint NOT NULL,
+  `payment_method` varchar(255) NOT NULL,
+  `status` enum('COMPLETED','FAILED','PENDING','REFUNDED') NOT NULL,
+  `transaction_id` varchar(255) DEFAULT NULL,
+  `updated_at` datetime(6) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UKlryndveuwa4k5qthti0pkmtlx` (`transaction_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `payments`
+--
+
+LOCK TABLES `payments` WRITE;
+/*!40000 ALTER TABLE `payments` DISABLE KEYS */;
+INSERT INTO `payments` VALUES (1,1377.06,'2026-10-11 07:21:03.965092','EUR',1,1,'CREDIT_CARD','COMPLETED','TXN-4a87de06-1f5d-4aea-a5c8-d6994f190e5b','2026-10-11 07:21:04.105470'),(2,321.85,'2026-10-11 09:35:14.949566','EUR',1,2,'CREDIT_CARD','COMPLETED','TXN-c9a9f0fe-15e3-4aa7-8021-ad08e71cb782','2026-10-11 09:35:14.991745'),(3,950.40,'2026-10-11 09:59:59.612744','EUR',1,3,'CREDIT_CARD','COMPLETED','TXN-c2c002eb-f740-4d85-ab29-7c118b27470a','2026-10-11 09:59:59.643786'),(4,142.22,'2026-10-14 07:26:48.332920','EUR',2,4,'CREDIT_CARD','COMPLETED','TXN-c3b40d90-b97f-41f3-bcda-c003f2d7ca1c','2026-10-14 07:26:48.737210'),(5,568.88,'2026-10-14 10:08:02.573631','EUR',2,5,'CREDIT_CARD','COMPLETED','TXN-cb41028f-dee5-4d49-9924-f8ee55ce5caf','2026-10-14 10:08:02.649492'),(6,875.58,'2026-10-14 10:21:47.571143','EUR',2,6,'CREDIT_CARD','COMPLETED','TXN-539c5ad1-c90c-4a31-be41-cf3d83344bab','2026-10-14 10:21:47.592623'),(7,314.43,'2026-10-14 11:35:33.181419','EUR',2,7,'CREDIT_CARD','COMPLETED','TXN-dbde755e-ce52-4b36-908c-045aca683473','2026-10-14 11:35:33.286804'),(8,426.66,'2026-10-21 10:31:11.569671','EUR',2,8,'CREDIT_CARD','COMPLETED','TXN-446a15b8-9aa4-4d8d-b658-ef6535fccaa1','2026-10-21 10:31:11.844584');
+/*!40000 ALTER TABLE `payments` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Dumping events for database 'payment_db'
+--
+
+--
+-- Dumping routines for database 'payment_db'
+--
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2026-10-31 20:52:37

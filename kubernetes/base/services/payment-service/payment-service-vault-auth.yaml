@@ -1,0 +1,13 @@
+apiVersion: secrets.hashicorp.com/v1beta1
+kind: VaultAuth
+metadata:
+  name: payment-service-vault-auth
+  namespace: gwatcho-local
+spec:
+  method: kubernetes
+  mount: kubernetes
+  vaultConnectionRef: vault-local
+  kubernetes:
+    role: gwatcho-payment-service-role
+    serviceAccount: vso-payment-service
+    tokenExpirationSeconds: 600

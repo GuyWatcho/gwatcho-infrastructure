@@ -42,7 +42,16 @@ spec:
                   name: payment-db-secret
                   key: SPRING_DATASOURCE_PASSWORD
             - name: SPRING_KAFKA_BOOTSTRAP_SERVERS
-              value: host.docker.internal:19092
+              value: kafka:19092
+            
+            # The JWT issuer must match the issuer in issued tokens.
+            - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI
+              value: http://localhost:8080/realms/gwatcho-shop
+
+            # The  JWK retrieval.
+            - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI
+              value: http://keycloak:8080/realms/gwatcho-shop/protocol/openid-connect/certs
+              
           startupProbe:
             httpGet:
               path: /payment-service/actuator/health

@@ -54,7 +54,7 @@ spec:
 
             # The  JWK retrieval.
             - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI
-              value: http://host.docker.internal:8080/realms/gwatcho-shop/protocol/openid-connect/certs
+              value: http://keycloak:8080/realms/gwatcho-shop/protocol/openid-connect/certs
 
           startupProbe:
             httpGet:

@@ -27,7 +27,7 @@ spec:
           
           env:
             - name: SPRING_PROFILES_ACTIVE
-              value: docker
+              value: kubernetes
             - name: SERVER_PORT
               value: "8085"
 
@@ -37,7 +37,7 @@ spec:
 
             # Internal pod-to-host access for JWK retrieval.
             - name: SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI
-              value: http://host.docker.internal:8080/realms/gwatcho-shop/protocol/openid-connect/certs
+              value: http://keycloak:8080/realms/gwatcho-shop/protocol/openid-connect/certs
               
           readinessProbe:
             httpGet:

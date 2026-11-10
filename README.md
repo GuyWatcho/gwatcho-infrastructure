@@ -13,6 +13,10 @@ Local Docker Compose environment and Kubernetes manifests for the GWatcho e-comm
 - [Kubernetes manifests and Product Service guide](kubernetes/README.md)
 - [CI/CD Angular deployment](docs/ci-cd-angular-deployment.md)
 
+## Git release workflow
+
+- [PowerShell Git release and branch workflow](docs/git-release-workflow.md) — merge `develop` into `main`, create the `v1.1.0` tag and release branch, synchronize `develop`, and safely handle tag-name changes.
+
 ## What this repository contains
 
 - Docker Compose configuration for five MySQL databases, Kafka, Keycloak, five backend services, the API Gateway, and Angular frontend.

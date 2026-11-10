@@ -163,29 +163,17 @@ The five MySQL Deployments also require the key `MYSQL_ROOT_PASSWORD` in their c
 
 ## 6. Apply and verify Kubernetes deployments
 
-Run commands from the infrastructure repository root in PowerShell. The base directories are organized by component; apply each desired resource set explicitly.
+Run commands from the infrastructure repository root in PowerShell. The local overlay at `kubernetes/overlays/local` includes the five microservice Deployments, five dedicated MySQL Deployments, Keycloak's database and workload, and Kafka. It is the recommended way to apply the complete local Kubernetes stack.
 
-Apply microservices:
-
-```powershell
-kubectl apply -k .\kubernetes\base\services\user-service
-kubectl apply -k .\kubernetes\base\services\product-service
-kubectl apply -k .\kubernetes\base\services\order-service
-kubectl apply -k .\kubernetes\base\services\payment-service
-kubectl apply -k .\kubernetes\base\services\delivery-service
-```
-
-Apply MySQL workloads:
+Inspect and apply the complete local overlay:
 
 ```powershell
-kubectl apply -k .\kubernetes\base\databases\mysql-user
-kubectl apply -k .\kubernetes\base\databases\mysql-product
-kubectl apply -k .\kubernetes\base\databases\mysql-order
-kubectl apply -k .\kubernetes\base\databases\mysql-payment
-kubectl apply -k .\kubernetes\base\databases\mysql-delivery
+kubectl kustomize .\kubernetes\overlays\local
+kubectl apply --dry-run=client -k .\kubernetes\overlays\local
+kubectl apply -k .\kubernetes\overlays\local
 ```
 
-The component Kustomizations must be applied only after their required Secrets exist (and, where enabled, have been synchronized by Vault Secrets Operator). Inspect the rendered manifests first with `kubectl kustomize <directory>`.
+The overlay includes the database and service Kustomizations. Confirm required Kubernetes Secrets are present before relying on Pods becoming ready. The user-service base Kustomization currently includes only its Deployment and Service; verify that its VaultAuth/VaultStaticSecret resources and database Secret are provisioned by the relevant Vault configuration before applying the full overlay.
 
 Check workloads and Services:
 

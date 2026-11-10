@@ -2,92 +2,102 @@
 
 ## Overview
 
-The Angular frontend is deployed in the local Kubernetes cluster in namespace `gwatcho-local`. It communicates with backend APIs through the API Gateway. Keycloak, Kafka, Nginx, and MySQL are currently retained in the Docker environment; they are not moved by this frontend deployment.
+The GWatcho Webshop application is deployed on the local Kubernetes cluster in namespace `gwatcho-local`. The Angular frontend is exposed through the Kubernetes ingress/reverse-proxy entry point and communicates with backend services through the API Gateway. The application runtime components shown below are Kubernetes workloads or Kubernetes Services.
 
-## Architecture diagram
+This page documents the Kubernetes deployment view only. It does not describe the earlier Docker Compose runtime or a mixed Docker/Kubernetes topology. External dependencies, persistent storage, and host-level networking are represented only where they are part of the Kubernetes deployment configuration.
 
-The diagram shows the intended logical connections. Solid arrows represent HTTP/API traffic; dashed arrows represent authentication or messaging/infrastructure connections. Kubernetes-hosted Keycloak and Kafka are shown in the Kubernetes group. Database placement and service cutover status can differ during this staged migration; confirm current resource configuration before changing workloads.
+## Kubernetes architecture diagram
+
+The diagram shows the Kubernetes namespace, application workloads, service-to-service traffic, authentication, and asynchronous messaging. The frontend is reached by the user's browser through the cluster entry point. Browser API traffic is sent to the API Gateway using a browser-reachable URL; Kubernetes DNS names are used only for in-cluster communication.
 
 ```mermaid
 flowchart TB
-    Browser["User browser"]
+    USER["User browser"]
 
-    subgraph K8S["Kubernetes - namespace gwatcho-local"]
-        FE["angular-frontend<br/>Service :80"]
-        GW["api-gateway<br/>Service :8085"]
+    subgraph CLUSTER["Local Kubernetes cluster"]
+      subgraph NS["Namespace: gwatcho-local"]
+        direction TB
 
-        US["user-service<br/>:8080"]
-        PS["product-service<br/>:8080"]
-        OS["order-service<br/>:8080"]
-        PAY["payment-service<br/>:8080"]
-        DS["delivery-service<br/>:8080"]
+        ENTRY["Ingress / Nginx entry point"]
+        FE["angular-frontend<br/>Deployment + Service :80"]
+        GW["api-gateway<br/>Deployment + Service :8085"]
 
-        FE -->|"HTTP API requests via public proxy URL"| GW
+        subgraph SERVICES["Backend microservices"]
+          direction LR
+          US["user-service<br/>Deployment + Service :8080"]
+          PS["product-service<br/>Deployment + Service :8080"]
+          OS["order-service<br/>Deployment + Service :8080"]
+          PAY["payment-service<br/>Deployment + Service :8080"]
+          DS["delivery-service<br/>Deployment + Service :8080"]
+        end
+
+        KC["Keycloak<br/>Deployment + Service"]
+        KAFKA["Kafka<br/>Stateful workload + Service"]
+        DB[("MySQL<br/>Stateful workload / Service")]
+
+        ENTRY -->|"Serve frontend"| FE
+        FE -->|"HTTP API requests"| GW
         GW --> US
         GW --> PS
         GW --> OS
         GW --> PAY
         GW --> DS
+
+        USER -.->|"OIDC sign-in / token"| KC
+        KC -.->|"Issuer and signing keys"| GW
+
+        US --> DB
+        PS --> DB
+        OS --> DB
+        PAY --> DB
+        DS --> DB
+
+        US -.->|"Events"| KAFKA
+        PS -.->|"Events"| KAFKA
+        OS -.->|"Events"| KAFKA
+        PAY -.->|"Events"| KAFKA
+        DS -.->|"Events"| KAFKA
+      end
     end
 
-    subgraph DOCKER["Docker environment - existing infrastructure"]
-        NGINX["Nginx reverse proxy"]
-        KC["Keycloak<br/>gwatcho-shop realm"]
-        KAFKA["Kafka broker"]
-        UDB[("MySQL database<br/>user service")]
-        PDB[("MySQL database<br/>product service")]
-        ODB[("MySQL database<br/>order service")]
-        PAYDB[("MySQL database<br/>payment service")]
-        DDB[("MySQL database<br/>delivery service")]
-    end
+    USER -->|"HTTPS / HTTP"| ENTRY
 
-    Browser -->|"Load UI"| NGINX
-    NGINX --> FE
-    Browser -. "OIDC login / token" .-> KC
-    KC -. "JWT issuer and signing keys" .-> GW
-
-    US --> UDB
-    PS --> PDB
-    OS --> ODB
-    PAY --> PAYDB
-    DS --> DDB
-
-    US -. "events" .-> KAFKA
-    PS -. "events" .-> KAFKA
-    OS -. "events" .-> KAFKA
-    PAY -. "events" .-> KAFKA
-    DS -. "events" .-> KAFKA
-
-    classDef k8s fill:#e8f2ff,stroke:#4472c4,color:#172b4d;
-    classDef docker fill:#fff1dd,stroke:#b7791f,color:#5c3b08;
-    class FE,GW,US,PS,OS,PAY,DS k8s;
-    class NGINX,KC,KAFKA,UDB,PDB,ODB,PAYDB,DDB docker;
+    classDef edge fill:#e8f2ff,stroke:#4472c4,color:#172b4d;
+    classDef app fill:#eaf7ee,stroke:#398052,color:#173d27;
+    classDef infra fill:#fff1dd,stroke:#b7791f,color:#5c3b08;
+    class ENTRY,FE,GW edge;
+    class US,PS,OS,PAY,DS app;
+    class KC,KAFKA,DB infra;
 ```
+
+> **Deployment accuracy:** This diagram is a Kubernetes logical architecture view. It does not assert the exact replica count, storage class, PVC layout, ingress controller implementation, or database topology. Confirm those details from the live manifests and cluster resources before treating them as deployment facts. If a dependency is not currently deployed in `gwatcho-local`, it should be added to the diagram only after its Kubernetes workload and Service are in place.
 
 ### Request and authentication flow
 
-1. The browser loads the Angular application through the existing Nginx entry point.
-2. Angular uses a browser-reachable API URL to call the API Gateway. Do not use Kubernetes-only DNS names directly in browser configuration.
-3. The user signs in through Keycloak using the configured OIDC client and realm.
-4. Angular sends the access token with protected API requests. The API Gateway validates the JWT using the configured issuer/JWK metadata.
-5. The API Gateway routes requests to the appropriate backend service: user, product, order, payment, or delivery.
-6. Each backend service connects to its own MySQL database in the Docker environment.
-7. Services that publish or consume asynchronous events connect to the Docker-hosted Kafka broker according to their configured topics and producer/consumer setup.
+1. The browser opens the frontend through the Kubernetes ingress/reverse-proxy entry point.
+2. The entry point routes the frontend request to the `angular-frontend` Service on port 80.
+3. Angular uses a browser-reachable API URL to call the API Gateway. Do not place Kubernetes-only DNS names in browser configuration.
+4. The user signs in through Keycloak using the configured OIDC client and realm.
+5. Angular sends the access token with protected API requests. The API Gateway validates the JWT against the configured issuer and signing-key metadata.
+6. The API Gateway routes requests to the appropriate backend Service: `user-service`, `product-service`, `order-service`, `payment-service`, or `delivery-service`.
+7. Backend services access their configured database endpoint and exchange asynchronous events through Kafka where their producer/consumer configuration requires it.
 
-## Network boundary: Kubernetes and Docker
+## Kubernetes networking and service discovery
 
-Because the application services run in Kubernetes while MySQL, Keycloak, and Kafka remain in Docker, verify that each Kubernetes workload can reach the correct host address and published port. A hostname that works inside a Docker container or on the Windows host may not resolve the same way from a Kubernetes pod.
+Kubernetes Services provide stable in-cluster endpoints for the frontend, API Gateway, backend services, and infrastructure workloads. Within the namespace, workloads should use the Kubernetes Service DNS name and the Service port rather than a pod IP.
 
-For each connection, verify:
+Verify the following for each connection:
 
-- The Docker service publishes the required port on a host interface reachable from Kubernetes.
-- The Kubernetes application configuration uses the correct reachable hostname and port.
-- Firewalls and bind addresses permit the connection.
-- Keycloak's configured JWT `iss` value exactly matches the issuer expected by the API Gateway. Changing the URL without aligning the issuer can cause JWT validation failures.
-- Kafka's advertised listeners return an address reachable by Kubernetes clients; a reachable bootstrap port alone is not always sufficient.
-- MySQL database/schema names and credentials match the corresponding service configuration or Vault-injected secret.
+- The target Deployment/StatefulSet and Service exist in namespace `gwatcho-local`.
+- Service selectors match the labels on the intended Pods.
+- Service `port` and `targetPort` match the container's listening port.
+- NetworkPolicies, if enabled, permit the required traffic.
+- The Keycloak JWT `iss` value exactly matches the issuer expected by the API Gateway. A mismatch causes JWT validation failures.
+- Kafka's advertised listeners resolve to addresses reachable by Kubernetes clients. A reachable bootstrap port alone is not sufficient.
+- Database connection URLs, schema names, and credentials match the service configuration or the Kubernetes/Vault-injected Secrets.
+- Persistent workloads use the intended PersistentVolumeClaims and StorageClass.
 
-The diagram intentionally labels database nodes by service rather than assuming unverified schema names. Confirm exact database names, ports, Kafka topics, and actual network routes from the current Docker Compose files and service configuration.
+For troubleshooting, inspect the live cluster rather than assuming that a host name or port from Docker Compose is valid inside a Pod.
 
 ## Angular frontend Kubernetes manifests
 
@@ -107,8 +117,8 @@ The current Deployment uses `ghcr.io/guybami/gwatcho-angular-frontend:develop-la
 Run from the local `gwatcho-infrastructure` repository in PowerShell:
 
 ```powershell
-kubectl kustomize .\kubernetes\base\angular-frontend
-kubectl apply -k .\kubernetes\base\angular-frontend
+kubectl kustomize .\\kubernetes\\base\\angular-frontend
+kubectl apply -k .\\kubernetes\\base\\angular-frontend
 kubectl rollout status deployment/angular-frontend -n gwatcho-local --timeout=180s
 ```
 
@@ -150,6 +160,7 @@ kubectl get deployment angular-frontend -n gwatcho-local -o jsonpath='{.spec.tem
 
 ## Operational notes
 
-- The manifest assumes the frontend container serves HTTP on port 80. If the image uses another port, update the Deployment and Service consistently.
-- A healthy Pod does not prove that API routing, database access, Kafka messaging, or Keycloak login works end to end.
-- This documentation does not change Nginx, Keycloak, Kafka, backend services, or database volumes.
+- The frontend manifest assumes the container serves HTTP on port 80. If the image uses another port, update the Deployment and Service consistently.
+- A healthy frontend Pod does not prove that API routing, database access, Kafka messaging, or Keycloak login works end to end.
+- Keep browser-facing URLs separate from in-cluster Service DNS names.
+- This page documents the Kubernetes deployment view; use the actual Kubernetes manifests and live resources as the source of truth for which dependencies are deployed and their current configuration.

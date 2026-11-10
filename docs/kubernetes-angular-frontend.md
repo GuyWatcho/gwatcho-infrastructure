@@ -33,7 +33,14 @@ flowchart TB
 
         KC["Keycloak<br/>Deployment + Service"]
         KAFKA["Kafka<br/>Stateful workload + Service"]
-        DB[("MySQL<br/>Stateful workload / Service")]
+        subgraph DATABASES["Dedicated MySQL databases - one per microservice"]
+          direction LR
+          UDB[("user-service-db<br/>MySQL database")]
+          PDB[("product-service-db<br/>MySQL database")]
+          ODB[("order-service-db<br/>MySQL database")]
+          PAYDB[("payment-service-db<br/>MySQL database")]
+          DDB[("delivery-service-db<br/>MySQL database")]
+        end
 
         ENTRY -->|"Serve frontend"| FE
         FE -->|"HTTP API requests"| GW
@@ -46,11 +53,11 @@ flowchart TB
         USER -.->|"OIDC sign-in / token"| KC
         KC -.->|"Issuer and signing keys"| GW
 
-        US --> DB
-        PS --> DB
-        OS --> DB
-        PAY --> DB
-        DS --> DB
+        US --> UDB
+        PS --> PDB
+        OS --> ODB
+        PAY --> PAYDB
+        DS --> DDB
 
         US -.->|"Events"| KAFKA
         PS -.->|"Events"| KAFKA
@@ -67,10 +74,10 @@ flowchart TB
     classDef infra fill:#fff1dd,stroke:#b7791f,color:#5c3b08;
     class ENTRY,FE,GW edge;
     class US,PS,OS,PAY,DS app;
-    class KC,KAFKA,DB infra;
+    class KC,KAFKA,UDB,PDB,ODB,PAYDB,DDB infra;
 ```
 
-> **Deployment accuracy:** This diagram is a Kubernetes logical architecture view. It does not assert the exact replica count, storage class, PVC layout, ingress controller implementation, or database topology. Confirm those details from the live manifests and cluster resources before treating them as deployment facts. If a dependency is not currently deployed in `gwatcho-local`, it should be added to the diagram only after its Kubernetes workload and Service are in place.
+> **Database isolation:** Each backend microservice has its own MySQL database: user, product, order, payment, and delivery services do not share an application database. The five database nodes in the diagram represent five separate logical databases and ownership boundaries. They do not imply five separate MySQL server instances; the physical MySQL server/StatefulSet topology may be shared or separate according to the Kubernetes configuration.
 
 ### Request and authentication flow
 
@@ -80,7 +87,7 @@ flowchart TB
 4. The user signs in through Keycloak using the configured OIDC client and realm.
 5. Angular sends the access token with protected API requests. The API Gateway validates the JWT against the configured issuer and signing-key metadata.
 6. The API Gateway routes requests to the appropriate backend Service: `user-service`, `product-service`, `order-service`, `payment-service`, or `delivery-service`.
-7. Backend services access their configured database endpoint and exchange asynchronous events through Kafka where their producer/consumer configuration requires it.
+7. Each backend service connects only to its own MySQL database: `user-service` to `user-service-db`, `product-service` to `product-service-db`, `order-service` to `order-service-db`, `payment-service` to `payment-service-db`, and `delivery-service` to `delivery-service-db`. Services exchange asynchronous events through Kafka where their producer/consumer configuration requires it.
 
 ## Kubernetes networking and service discovery
 
@@ -94,8 +101,10 @@ Verify the following for each connection:
 - NetworkPolicies, if enabled, permit the required traffic.
 - The Keycloak JWT `iss` value exactly matches the issuer expected by the API Gateway. A mismatch causes JWT validation failures.
 - Kafka's advertised listeners resolve to addresses reachable by Kubernetes clients. A reachable bootstrap port alone is not sufficient.
+- Each microservice has a dedicated MySQL database. Verify that every service's JDBC URL, database name, username, and password target its own database and that no service is accidentally configured to use another service's database.
 - Database connection URLs, schema names, and credentials match the service configuration or the Kubernetes/Vault-injected Secrets.
 - Persistent workloads use the intended PersistentVolumeClaims and StorageClass.
+- MySQL database separation is preserved during deployment and migration: user, product, order, payment, and delivery data remain in their respective databases.
 
 For troubleshooting, inspect the live cluster rather than assuming that a host name or port from Docker Compose is valid inside a Pod.
 

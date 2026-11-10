@@ -1,4 +1,4 @@
-apiVersion: apps/v1
+﻿apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: keycloak
@@ -72,17 +72,3 @@ spec:
         - name: realm-import
           secret:
             secretName: keycloak-realm-import
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: keycloak
-  namespace: gwatcho-local
-spec:
-  type: ClusterIP
-  selector:
-    app: keycloak
-  ports:
-    - name: http
-      port: 8080
-      targetPort: 8080

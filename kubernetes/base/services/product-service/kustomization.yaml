@@ -3,5 +3,3 @@ kind: Kustomization
 resources:
   - deployment.yaml
   - service.yaml
-  - product-service-vault-auth.yaml
-  - product-db-secret.yaml

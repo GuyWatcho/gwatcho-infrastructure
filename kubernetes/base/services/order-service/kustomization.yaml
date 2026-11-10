@@ -3,5 +3,3 @@ kind: Kustomization
 resources:
   - deployment.yaml
   - service.yaml
-  - order-service-vault-auth.yaml
-  - order-db-secret.yaml

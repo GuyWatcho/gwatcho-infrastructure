@@ -3,5 +3,3 @@ kind: Kustomization
 resources:
   - deployment.yaml
   - service.yaml
-  - payment-service-vault-auth.yaml
-  - payment-db-secret.yaml
